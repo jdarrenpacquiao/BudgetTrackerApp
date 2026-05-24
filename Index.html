@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PennyTrack</title>
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface2: #f7fafc;
+    --border: #e2e8f0;
+    --text: #1a202c;
+    --text2: #4a5568;
+    --text3: #718096;
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --primary-light: #eef2ff;
+    --income: #059669;
+    --income-bg: #ecfdf5;
+    --expense: #dc2626;
+    --expense-bg: #fef2f2;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  [data-theme="dark"] {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #13151f;
+    --border: #2d3148;
+    --text: #f1f5f9;
+    --text2: #cbd5e1;
+    --text3: #94a3b8;
+    --primary: #818cf8;
+    --primary-hover: #6366f1;
+    --primary-light: #1e1f3b;
+    --income: #34d399;
+    --income-bg: #052e16;
+    --expense: #f87171;
+    --expense-bg: #2d0a0a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ── TOP NAV ── */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  .topbar-brand { font-size: 1.2rem; font-weight: 700; color: var(--primary); letter-spacing: -0.5px; }
+  .topbar-actions { display: flex; gap: 8px; align-items: center; }
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 0.8rem;
+    display: flex; align-items: center; gap: 4px;
+    transition: background 0.2s, color 0.2s;
+  }
+  .icon-btn:hover { background: var(--primary-light); color: var(--primary); }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 12px;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 14px 16px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  /* ── MAIN ── */
+  .main { padding: 16px; max-width: 600px; margin: 0 auto; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+  }
+  .card-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text3);
+    margin-bottom: 12px;
+  }
+
+  /* ── BALANCE GRID ── */
+  .balance-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .bal-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 12px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .bal-box .label { font-size: 0.68rem; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .bal-box .amount { font-size: 1.05rem; font-weight: 700; }
+  .bal-box.total .amount { color: var(--primary); }
+  .bal-box.inc .amount { color: var(--income); }
+  .bal-box.exp .amount { color: var(--expense); }
+
+  /* ── WALLET GRID ── */
+  .wallet-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .wallet-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .wallet-card .w-name { font-size: 0.75rem; font-weight: 700; color: var(--text2); display: flex; align-items: center; gap: 6px; }
+  .wallet-card .w-bal { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+  .wallet-card .w-tag { font-size: 0.65rem; background: var(--primary-light); color: var(--primary); padding: 2px 7px; border-radius: 20px; font-weight: 600; align-self: flex-start; }
+  .wallet-icon { font-size: 1.1rem; }
+
+  /* ── FORM ── */
+  .form-group { margin-bottom: 13px; }
+  .form-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text2); margin-bottom: 5px; }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 10px 13px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+  }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+  .type-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
+  .type-btn {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    background: var(--surface2);
+    color: var(--text3);
+    transition: all 0.2s;
+  }
+  .type-btn.income.active { background: var(--income-bg); color: var(--income); border-color: var(--income); }
+  .type-btn.expense.active { background: var(--expense-bg); color: var(--expense); border-color: var(--expense); }
+  .submit-btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .submit-btn:hover { background: var(--primary-hover); }
+  .submit-btn:active { transform: scale(0.98); }
+
+  /* ── AUTOCOMPLETE ── */
+  .autocomplete-wrap { position: relative; }
+  .autocomplete-list {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0; right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    z-index: 200;
+    max-height: 180px;
+    overflow-y: auto;
+    box-shadow: var(--shadow-md);
+    display: none;
+  }
+  .autocomplete-list.open { display: block; }
+  .ac-item {
+    padding: 9px 13px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text);
+    display: flex; justify-content: space-between;
+    transition: background 0.15s;
+  }
+  .ac-item:hover { background: var(--primary-light); }
+  .ac-item .ac-sub { font-size: 0.72rem; color: var(--text3); }
+
+  /* ── TRANSACTION LIST ── */
+  .txn-filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .txn-filters input,
+  .txn-filters select {
+    flex: 1;
+    min-width: 120px;
+    padding: 8px 11px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 0.82rem;
+    outline: none;
+  }
+  .txn-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .txn-item:last-child { border-bottom: none; }
+  .txn-dot {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .txn-dot.income { background: var(--income-bg); }
+  .txn-dot.expense { background: var(--expense-bg); }
+  .txn-info { flex: 1; min-width: 0; }
+  .txn-activity { font-size: 0.88rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .txn-meta { font-size: 0.72rem; color: var(--text3); margin-top: 2px; }
+  .txn-right { text-align: right; flex-shrink: 0; }
+  .txn-amount { font-size: 0.95rem; font-weight: 800; }
+  .txn-amount.income { color: var(--income); }
+  .txn-amount.expense { color: var(--expense); }
+  .txn-wallet { font-size: 0.7rem; color: var(--text3); margin-top: 2px; }
+  .txn-del { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 1rem; padding: 4px; border-radius: 6px; }
+  .txn-del:hover { color: var(--expense); background: var(--expense-bg); }
+
+  /* ── WALLETS SECTION ── */
+  .wallet-edit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .wallet-edit-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+  }
+  .wallet-edit-item label { font-size: 0.72rem; font-weight: 700; color: var(--text2); margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+  .wallet-edit-item input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.88rem;
+    font-weight: 700;
+    outline: none;
+  }
+  .wallet-edit-item input:focus { border-color: var(--primary); }
+
+  /* ── WALLET SUMMARY ── */
+  .ws-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  .ws-row:last-child { border-bottom: none; }
+  .ws-row .ws-name { font-weight: 600; color: var(--text2); display: flex; align-items: center; gap: 6px; }
+  .ws-row .ws-bal { font-weight: 800; color: var(--text); }
+  .ws-row .ws-bal.neg { color: var(--expense); }
+
+  /* ── SETTINGS ── */
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-label { font-size: 0.88rem; font-weight: 600; color: var(--text); }
+  .setting-sub { font-size: 0.72rem; color: var(--text3); margin-top: 2px; }
+  .toggle-sw {
+    position: relative;
+    width: 46px; height: 26px;
+    flex-shrink: 0;
+  }
+  .toggle-sw input { opacity: 0; width: 0; height: 0; }
+  .toggle-sw .slider {
+    position: absolute; inset: 0;
+    background: var(--border);
+    border-radius: 26px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .toggle-sw .slider:before {
+    content: '';
+    position: absolute;
+    left: 3px; top: 3px;
+    width: 20px; height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle-sw input:checked + .slider { background: var(--primary); }
+  .toggle-sw input:checked + .slider:before { transform: translateX(20px); }
+  .danger-btn {
+    padding: 9px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .danger-btn.red { background: var(--expense-bg); color: var(--expense); }
+  .danger-btn.red:hover { background: var(--expense); color: #fff; }
+  .gs-btn { background: var(--income-bg); color: var(--income); }
+  .gs-btn:hover { background: var(--income); color: #fff; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--text);
+    color: var(--surface);
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    z-index: 999;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+    box-shadow: var(--shadow-md);
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── MODAL ── */
+  .modal-bg {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 24px;
+    max-width: 360px;
+    width: 100%;
+    box-shadow: var(--shadow-md);
+  }
+  .modal h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+  .modal p { font-size: 0.85rem; color: var(--text2); margin-bottom: 20px; line-height: 1.5; }
+  .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+  .modal-btns button {
+    padding: 9px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    transition: all 0.2s;
+  }
+  .modal-btns button.confirm { background: var(--expense); color: #fff; border-color: var(--expense); }
+
+  /* ── EMPTY STATE ── */
+  .empty { text-align: center; padding: 40px 20px; color: var(--text3); }
+  .empty .emoji { font-size: 2.5rem; margin-bottom: 10px; }
+  .empty p { font-size: 0.85rem; }
+
+  /* ── CHART ── */
+  .chart-wrap { margin-top: 4px; }
+  .chart-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .chart-label { font-size: 0.72rem; color: var(--text2); font-weight: 600; width: 70px; flex-shrink: 0; text-align: right; }
+  .chart-bar-bg { flex: 1; background: var(--border); border-radius: 20px; height: 10px; overflow: hidden; }
+  .chart-bar-fill { height: 100%; border-radius: 20px; transition: width 0.5s; }
+  .chart-val { font-size: 0.72rem; color: var(--text3); width: 70px; flex-shrink: 0; }
+
+  @media (max-width: 360px) {
+    .wallet-grid, .wallet-edit-grid { grid-template-columns: 1fr; }
+    .balance-summary { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">💸 PennyTrack</div>
+  <div class="topbar-actions">
+    <button class="icon-btn" onclick="switchTab('add')">＋ Add</button>
+    <button class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()">🌙 Dark</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('dashboard')" id="tab-dashboard">📊 Dashboard</button>
+  <button class="tab" onclick="switchTab('add')" id="tab-add">➕ Add Entry</button>
+  <button class="tab" onclick="switchTab('history')" id="tab-history">📋 History</button>
+  <button class="tab" onclick="switchTab('wallets')" id="tab-wallets">👛 Wallets</button>
+  <button class="tab" onclick="switchTab('settings')" id="tab-settings">⚙️ Settings</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- ════════ DASHBOARD ════════ -->
+  <div class="section active" id="section-dashboard">
+    <div class="balance-summary">
+      <div class="bal-box total">
+        <div class="label">Net Balance</div>
+        <div class="amount" id="netBalance">₱0.00</div>
+      </div>
+      <div class="bal-box inc">
+        <div class="label">Income</div>
+        <div class="amount" id="totalIncome">₱0.00</div>
+      </div>
+      <div class="bal-box exp">
+        <div class="label">Expenses</div>
+        <div class="amount" id="totalExpense">₱0.00</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💳 Wallet Balances</div>
+      <div class="wallet-grid" id="walletGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📈 Spending by Category (Top 6)</div>
+      <div class="chart-wrap" id="categoryChart"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🕐 Recent Transactions</div>
+      <div id="recentTxns"></div>
+    </div>
+  </div>
+
+  <!-- ════════ ADD ENTRY ════════ -->
+  <div class="section" id="section-add">
+    <div class="card">
+      <div class="card-title">➕ New Transaction</div>
+
+      <div class="type-toggle">
+        <button class="type-btn income active" id="btnIncome" onclick="setType('income')">▲ Income</button>
+        <button class="type-btn expense" id="btnExpense" onclick="setType('expense')">▼ Expense</button>
+      </div>
+
+      <div class="form-group">
+        <label>Wallet / Account</label>
+        <select id="walletSelect">
+          <option value="Pocket Money">💵 Pocket Money</option>
+          <option value="GoTyme">🏦 GoTyme</option>
+          <option value="BPI">🏦 BPI</option>
+          <option value="UnionBank">🏦 UnionBank</option>
+          <option value="Maya">📱 Maya</option>
+          <option value="GCash">📱 GCash</option>
+          <option value="Wise">🌐 Wise</option>
+          <option value="PayPal">💙 PayPal</option>
+          <option value="AUB">🏦 AUB</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Activity</label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="activityInput" placeholder="e.g. Grocery Shopping" autocomplete="off"
+            oninput="acFilter('activity')" onfocus="acFilter('activity')" onblur="closeAc('activity',300)" />
+          <div class="autocomplete-list" id="acActivity"></div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Purpose / Description</label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="purposeInput" placeholder="e.g. Weekly groceries at SM" autocomplete="off"
+            oninput="acFilter('purpose')" onfocus="acFilter('purpose')" onblur="closeAc('purpose',300)" />
+          <div class="autocomplete-list" id="acPurpose"></div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Amount (₱)</label>
+        <input type="number" id="amountInput" placeholder="0.00" min="0" step="0.01" />
+      </div>
+
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="dateInput" />
+      </div>
+
+      <button class="submit-btn" onclick="addTransaction()">✔ Save Transaction</button>
+    </div>
+  </div>
+
+  <!-- ════════ HISTORY ════════ -->
+  <div class="section" id="section-history">
+    <div class="card" style="padding-bottom:8px;">
+      <div class="card-title">🔍 Filter Transactions</div>
+      <div class="txn-filters">
+        <input type="text" id="searchInput" placeholder="Search activity or purpose…" oninput="renderHistory()" />
+        <select id="filterWallet" onchange="renderHistory()">
+          <option value="">All Wallets</option>
+          <option value="Pocket Money">Pocket Money</option>
+          <option value="GoTyme">GoTyme</option>
+          <option value="BPI">BPI</option>
+          <option value="UnionBank">UnionBank</option>
+          <option value="Maya">Maya</option>
+          <option value="GCash">GCash</option>
+          <option value="Wise">Wise</option>
+          <option value="PayPal">PayPal</option>
+          <option value="AUB">AUB</option>
+        </select>
+        <select id="filterType" onchange="renderHistory()">
+          <option value="">All Types</option>
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+        </select>
+        <select id="filterMonth" onchange="renderHistory()">
+          <option value="">All Months</option>
+        </select>
+      </div>
+    </div>
+    <div class="card" id="historyList"></div>
+  </div>
+
+  <!-- ════════ WALLETS ════════ -->
+  <div class="section" id="section-wallets">
+    <div class="card">
+      <div class="card-title">👛 Set Opening / Adjust Balances</div>
+      <p style="font-size:0.78rem;color:var(--text3);margin-bottom:14px;">Set the starting balance for each wallet. Transactions will add to or subtract from these.</p>
+      <div class="wallet-edit-grid" id="walletEditGrid"></div>
+      <button class="submit-btn" style="margin-top:14px;" onclick="saveWalletBases()">💾 Save Balances</button>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 Current Wallet Summary</div>
+      <div id="walletSummary"></div>
+    </div>
+  </div>
+
+  <!-- ════════ SETTINGS ════════ -->
+  <div class="section" id="section-settings">
+    <div class="card">
+      <div class="card-title">⚙️ Preferences</div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Dark Mode</div>
+          <div class="setting-sub">Switch between light and dark theme</div>
+        </div>
+        <label class="toggle-sw">
+          <input type="checkbox" id="darkToggle" onchange="toggleTheme()" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Currency Symbol</div>
+          <div class="setting-sub">Default: ₱ (Philippine Peso)</div>
+        </div>
+        <select id="currencySelect" onchange="saveCurrency()" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:0.82rem;">
+          <option value="₱">₱ PHP</option>
+          <option value="$">$ USD</option>
+          <option value="€">€ EUR</option>
+          <option value="£">£ GBP</option>
+          <option value="¥">¥ JPY</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📤 Export & Sync</div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Export to CSV</div>
+          <div class="setting-sub">Download all transactions as a spreadsheet file</div>
+        </div>
+        <button class="danger-btn gs-btn" onclick="exportCSV()">⬇ CSV</button>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Save to Google Sheets</div>
+          <div class="setting-sub">Sign in with Google, then push data to a Sheet</div>
+        </div>
+        <button class="danger-btn gs-btn" onclick="openGoogleSheets()">📊 Sheets</button>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Backup (JSON)</div>
+          <div class="setting-sub">Download a full backup file you can restore later</div>
+        </div>
+        <button class="danger-btn gs-btn" onclick="exportJSON()">⬇ JSON</button>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Restore Backup</div>
+          <div class="setting-sub">Load transactions and balances from a JSON file</div>
+        </div>
+        <label class="danger-btn gs-btn" style="cursor:pointer;">
+          📥 Restore
+          <input type="file" id="restoreFile" accept="application/json" style="display:none;" onchange="importJSON(event)" />
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🗑 Data Management</div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Reset All Data</div>
+          <div class="setting-sub">Permanently delete all transactions and balances</div>
+        </div>
+        <button class="danger-btn red" onclick="confirmReset()">🗑 Reset</button>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:16px 0;font-size:0.72rem;color:var(--text3);">
+      PennyTrack v1.0 · All data stored locally on your device
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-bg" id="resetModal">
+  <div class="modal">
+    <h3>⚠️ Reset All Data?</h3>
+    <p>This will permanently delete all your transactions, wallet balances, and settings. This cannot be undone.</p>
+    <div class="modal-btns">
+      <button onclick="closeModal()">Cancel</button>
+      <button class="confirm" onclick="doReset()">Yes, Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- GOOGLE SHEETS MODAL -->
+<div class="modal-bg" id="gsModal">
+  <div class="modal">
+    <h3>📊 Save to Google Sheets</h3>
+    <p>To save directly to Google Sheets, you need to sign in to your Google account and open a Sheet. PennyTrack will copy your data to the clipboard — then just paste it into your Sheet (Ctrl/Cmd + V).</p>
+    <div class="modal-btns">
+      <button onclick="closeGsModal()">Cancel</button>
+      <button class="confirm" style="background:var(--income);border-color:var(--income);" onclick="copyAndOpenSheets()">Copy & Open Sheets</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+const WALLETS = [
+  { key: 'Pocket Money', label: 'Pocket Money', icon: '💵', tag: 'Cash' },
+  { key: 'GoTyme',       label: 'GoTyme',       icon: '🏦', tag: 'Digital Bank' },
+  { key: 'BPI',          label: 'BPI',          icon: '🏦', tag: 'Bank' },
+  { key: 'UnionBank',    label: 'UnionBank',    icon: '🏦', tag: 'Bank' },
+  { key: 'Maya',         label: 'Maya',         icon: '📱', tag: 'E-Wallet' },
+  { key: 'GCash',        label: 'GCash',        icon: '📱', tag: 'E-Wallet' },
+  { key: 'Wise',         label: 'Wise',         icon: '🌐', tag: 'Digital' },
+  { key: 'PayPal',       label: 'PayPal',       icon: '💙', tag: 'Digital' },
+  { key: 'AUB',          label: 'AUB',          icon: '🏦', tag: 'Bank' },
+];
+
+let transactions = [];
+let walletBases  = {};
+let currency     = '₱';
+let currentType  = 'income';
+
+function load() {
+  transactions = JSON.parse(localStorage.getItem('pt_txns') || '[]');
+  walletBases  = JSON.parse(localStorage.getItem('pt_bases') || '{}');
+  currency     = localStorage.getItem('pt_currency') || '₱';
+  const dark   = localStorage.getItem('pt_dark') === '1';
+  if (dark) { document.documentElement.setAttribute('data-theme','dark'); }
+  document.getElementById('darkToggle').checked = dark;
+  document.getElementById('themeToggleBtn').textContent = dark ? '☀️ Light' : '🌙 Dark';
+  document.getElementById('currencySelect').value = currency;
+}
+
+function save() {
+  localStorage.setItem('pt_txns',  JSON.stringify(transactions));
+  localStorage.setItem('pt_bases', JSON.stringify(walletBases));
+  localStorage.setItem('pt_currency', currency);
+}
+
+// ═══════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'history')   { populateMonthFilter(); renderHistory(); }
+  if (name === 'wallets')   renderWallets();
+}
+
+// ═══════════════════════════════════════════
+//  THEME
+// ═══════════════════════════════════════════
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const next   = isDark ? 'light' : 'dark';
+  if (next === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+  document.getElementById('darkToggle').checked = !isDark;
+  document.getElementById('themeToggleBtn').textContent = (!isDark) ? '☀️ Light' : '🌙 Dark';
+  localStorage.setItem('pt_dark', (!isDark) ? '1' : '0');
+}
+
+// ═══════════════════════════════════════════
+//  CURRENCY
+// ═══════════════════════════════════════════
+function saveCurrency() {
+  currency = document.getElementById('currencySelect').value;
+  localStorage.setItem('pt_currency', currency);
+  renderDashboard();
+  toast('Currency updated');
+}
+function fmt(n) {
+  return currency + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ═══════════════════════════════════════════
+//  WALLET BALANCE COMPUTATION
+// ═══════════════════════════════════════════
+function walletBalance(key) {
+  const base = parseFloat(walletBases[key] || 0);
+  const net  = transactions
+    .filter(t => t.wallet === key)
+    .reduce((s, t) => t.type === 'income' ? s + t.amount : s - t.amount, 0);
+  return base + net;
+}
+function totalBalance()  { return WALLETS.reduce((s, w) => s + walletBalance(w.key), 0); }
+function totalIncome()   { return transactions.filter(t => t.type === 'income').reduce((s,t) => s+t.amount, 0); }
+function totalExpenses() { return transactions.filter(t => t.type === 'expense').reduce((s,t) => s+t.amount, 0); }
+
+// ═══════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════
+function renderDashboard() {
+  document.getElementById('netBalance').textContent  = fmt(totalBalance());
+  document.getElementById('totalIncome').textContent = fmt(totalIncome());
+  document.getElementById('totalExpense').textContent= fmt(totalExpenses());
+
+  // wallet grid
+  const wg = document.getElementById('walletGrid');
+  wg.innerHTML = WALLETS.map(w => {
+    const bal = walletBalance(w.key);
+    return `<div class="wallet-card">
+      <div class="w-name"><span class="wallet-icon">${w.icon}</span>${w.label}</div>
+      <div class="w-bal" style="color:${bal<0?'var(--expense)':'var(--text)'}">${fmt(bal)}</div>
+      <div class="w-tag">${w.tag}</div>
+    </div>`;
+  }).join('');
+
+  // category chart (expense only)
+  const catMap = {};
+  transactions.filter(t=>t.type==='expense').forEach(t => {
+    catMap[t.activity] = (catMap[t.activity]||0) + t.amount;
+  });
+  const cats = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const max  = cats.length ? cats[0][1] : 1;
+  const colors = ['#818cf8','#f472b6','#fb923c','#34d399','#60a5fa','#a78bfa'];
+  const cc = document.getElementById('categoryChart');
+  if (!cats.length) {
+    cc.innerHTML = '<div class="empty"><div class="emoji">📊</div><p>No expense data yet.</p></div>';
+  } else {
+    cc.innerHTML = cats.map((c,i)=>`
+      <div class="chart-bar-row">
+        <div class="chart-label">${truncate(c[0],10)}</div>
+        <div class="chart-bar-bg">
+          <div class="chart-bar-fill" style="width:${(c[1]/max*100).toFixed(1)}%;background:${colors[i%6]}"></div>
+        </div>
+        <div class="chart-val">${fmt(c[1])}</div>
+      </div>`).join('');
+  }
+
+  // recent
+  const recent = [...transactions].reverse().slice(0,5);
+  document.getElementById('recentTxns').innerHTML = recent.length
+    ? recent.map(t => txnHtml(t, false)).join('')
+    : '<div class="empty"><div class="emoji">🕐</div><p>No transactions yet.</p></div>';
+}
+
+function truncate(str, n) { return str.length > n ? str.slice(0,n)+'…' : str; }
+
+// ═══════════════════════════════════════════
+//  ADD TRANSACTION
+// ═══════════════════════════════════════════
+function setType(t) {
+  currentType = t;
+  document.getElementById('btnIncome').classList.toggle('active',  t==='income');
+  document.getElementById('btnExpense').classList.toggle('active', t==='expense');
+}
+
+function addTransaction() {
+  const wallet   = document.getElementById('walletSelect').value;
+  const activity = document.getElementById('activityInput').value.trim();
+  const purpose  = document.getElementById('purposeInput').value.trim();
+  const amount   = parseFloat(document.getElementById('amountInput').value);
+  const date     = document.getElementById('dateInput').value;
+
+  if (!activity) { toast('⚠️ Please enter an activity.'); return; }
+  if (!amount || amount <= 0) { toast('⚠️ Enter a valid amount.'); return; }
+  if (!date) { toast('⚠️ Please pick a date.'); return; }
+
+  const txn = {
+    id: Date.now(),
+    type: currentType,
+    wallet, activity, purpose,
+    amount, date
+  };
+  transactions.push(txn);
+  save();
+
+  // reset form
+  document.getElementById('activityInput').value = '';
+  document.getElementById('purposeInput').value  = '';
+  document.getElementById('amountInput').value   = '';
+
+  toast(currentType === 'income' ? '✅ Income saved!' : '✅ Expense saved!');
+  renderDashboard();
+}
+
+// ═══════════════════════════════════════════
+//  AUTOCOMPLETE
+// ═══════════════════════════════════════════
+function getUnique(field) {
+  const map = {};
+  [...transactions].reverse().forEach(t => {
+    const key = t[field];
+    if (key && !map[key]) map[key] = { activity: t.activity, purpose: t.purpose };
+  });
+  return Object.entries(map).map(([val, meta]) => ({ val, meta }));
+}
+
+function acFilter(field) {
+  const inputEl  = document.getElementById(field === 'activity' ? 'activityInput' : 'purposeInput');
+  const listEl   = document.getElementById(field === 'activity' ? 'acActivity' : 'acPurpose');
+  const q        = inputEl.value.toLowerCase();
+  const unique   = getUnique(field);
+  const filtered = unique.filter(u => u.val.toLowerCase().includes(q)).slice(0, 6);
+
+  if (!filtered.length) { listEl.classList.remove('open'); return; }
+
+  listEl.innerHTML = filtered.map(u => {
+    const sub = field === 'activity' ? u.meta.purpose : u.meta.activity;
+    return `<div class="ac-item" onmousedown="pickAc('${field}','${escQ(u.val)}')">
+      <span>${u.val}</span>
+      <span class="ac-sub">${truncate(sub||'',28)}</span>
+    </div>`;
+  }).join('');
+  listEl.classList.add('open');
+}
+
+function pickAc(field, val) {
+  const inputEl = document.getElementById(field === 'activity' ? 'activityInput' : 'purposeInput');
+  const listEl  = document.getElementById(field === 'activity' ? 'acActivity' : 'acPurpose');
+  inputEl.value = val.replace(/&#39;/g,"'");
+  listEl.classList.remove('open');
+}
+
+function closeAc(field, delay) {
+  setTimeout(() => {
+    const listEl = document.getElementById(field === 'activity' ? 'acActivity' : 'acPurpose');
+    listEl.classList.remove('open');
+  }, delay);
+}
+
+function escQ(s) { return s.replace(/'/g,"&#39;"); }
+
+// ═══════════════════════════════════════════
+//  HISTORY
+// ═══════════════════════════════════════════
+function populateMonthFilter() {
+  const months = [...new Set(transactions.map(t => t.date.slice(0,7)))].sort().reverse();
+  const sel    = document.getElementById('filterMonth');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All Months</option>' +
+    months.map(m => `<option value="${m}">${fmtMonth(m)}</option>`).join('');
+  if (current) sel.value = current;
+}
+
+function fmtMonth(ym) {
+  const [y,m] = ym.split('-');
+  return new Date(y, m-1).toLocaleString('default',{month:'long',year:'numeric'});
+}
+
+function renderHistory() {
+  const q     = document.getElementById('searchInput').value.toLowerCase();
+  const wf    = document.getElementById('filterWallet').value;
+  const tf    = document.getElementById('filterType').value;
+  const mf    = document.getElementById('filterMonth').value;
+
+  let list = [...transactions].reverse().filter(t => {
+    const matchQ = !q || t.activity.toLowerCase().includes(q) || (t.purpose||'').toLowerCase().includes(q);
+    const matchW = !wf || t.wallet === wf;
+    const matchT = !tf || t.type === tf;
+    const matchM = !mf || t.date.startsWith(mf);
+    return matchQ && matchW && matchT && matchM;
+  });
+
+  const el = document.getElementById('historyList');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty"><div class="emoji">🔍</div><p>No transactions found.</p></div>';
+    return;
+  }
+  el.innerHTML = list.map(t => txnHtml(t, true)).join('');
+}
+
+function txnHtml(t, showDel) {
+  const w = WALLETS.find(w => w.key === t.wallet) || {};
+  const sign = t.type === 'income' ? '+' : '-';
+  const dateStr = new Date(t.date + 'T00:00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});
+  return `<div class="txn-item" id="txn-${t.id}">
+    <div class="txn-dot ${t.type}">${t.type==='income'?'▲':'▼'}</div>
+    <div class="txn-info">
+      <div class="txn-activity">${escapeHtml(t.activity)}</div>
+      <div class="txn-meta">${escapeHtml(t.purpose||'—')} · ${dateStr}</div>
+    </div>
+    <div class="txn-right">
+      <div class="txn-amount ${t.type}">${sign}${fmt(t.amount)}</div>
+      <div class="txn-wallet">${w.icon||''} ${t.wallet}</div>
+    </div>
+    ${showDel ? `<button class="txn-del" onclick="deleteTxn(${t.id})" title="Delete">✕</button>` : ''}
+  </div>`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function deleteTxn(id) {
+  transactions = transactions.filter(t => t.id !== id);
+  save();
+  renderHistory();
+  renderDashboard();
+  toast('Transaction deleted');
+}
+
+// ═══════════════════════════════════════════
+//  WALLETS SECTION
+// ═══════════════════════════════════════════
+function renderWallets() {
+  // edit grid
+  document.getElementById('walletEditGrid').innerHTML = WALLETS.map(w => `
+    <div class="wallet-edit-item">
+      <label>${w.icon} ${w.label}</label>
+      <input type="number" step="0.01" id="base-${w.key.replace(/\s+/g,'_')}"
+        value="${(walletBases[w.key]!==undefined?walletBases[w.key]:0)}" placeholder="0.00" />
+    </div>
+  `).join('');
+
+  // summary list
+  const sum = document.getElementById('walletSummary');
+  sum.innerHTML = WALLETS.map(w => {
+    const bal = walletBalance(w.key);
+    return `<div class="ws-row">
+      <div class="ws-name">${w.icon} ${w.label}</div>
+      <div class="ws-bal ${bal<0?'neg':''}">${fmt(bal)}</div>
+    </div>`;
+  }).join('') + `
+    <div class="ws-row" style="margin-top:6px;border-top:2px solid var(--border);padding-top:12px;">
+      <div class="ws-name" style="color:var(--primary);font-weight:800;">TOTAL</div>
+      <div class="ws-bal" style="color:var(--primary);font-size:1rem;">${fmt(totalBalance())}</div>
+    </div>`;
+}
+
+function saveWalletBases() {
+  WALLETS.forEach(w => {
+    const el = document.getElementById('base-' + w.key.replace(/\s+/g,'_'));
+    if (el) {
+      const v = parseFloat(el.value);
+      walletBases[w.key] = isNaN(v) ? 0 : v;
+    }
+  });
+  save();
+  renderWallets();
+  toast('💾 Wallet balances saved');
+}
+
+// ═══════════════════════════════════════════
+//  EXPORT — CSV
+// ═══════════════════════════════════════════
+function exportCSV() {
+  if (!transactions.length) { toast('⚠️ No transactions to export.'); return; }
+
+  const header = ['Date','Type','Wallet','Activity','Purpose','Amount'];
+  const rows = [...transactions]
+    .sort((a,b) => a.date.localeCompare(b.date))
+    .map(t => [
+      t.date,
+      t.type,
+      t.wallet,
+      csvCell(t.activity),
+      csvCell(t.purpose || ''),
+      (t.type === 'expense' ? '-' : '') + t.amount.toFixed(2)
+    ].join(','));
+
+  const csv = [header.join(','), ...rows].join('\n');
+  downloadFile('pennytrack-' + todayStr() + '.csv', csv, 'text/csv;charset=utf-8;');
+  toast('⬇ CSV downloaded');
+}
+
+function csvCell(s) {
+  s = String(s || '');
+  if (/[",\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+  return s;
+}
+
+function todayStr() {
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+
+function downloadFile(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ═══════════════════════════════════════════
+//  EXPORT — JSON BACKUP / RESTORE
+// ═══════════════════════════════════════════
+function exportJSON() {
+  const payload = {
+    app: 'PennyTrack',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    currency,
+    walletBases,
+    transactions
+  };
+  downloadFile('pennytrack-backup-' + todayStr() + '.json',
+    JSON.stringify(payload, null, 2), 'application/json');
+  toast('⬇ Backup downloaded');
+}
+
+function importJSON(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data.transactions)) throw new Error('Invalid file');
+      transactions = data.transactions;
+      walletBases  = data.walletBases || {};
+      if (data.currency) currency = data.currency;
+      document.getElementById('currencySelect').value = currency;
+      save();
+      renderDashboard();
+      toast('✅ Backup restored');
+    } catch (err) {
+      toast('⚠️ Invalid backup file');
+    }
+    ev.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════
+//  GOOGLE SHEETS HANDOFF
+// ═══════════════════════════════════════════
+function openGoogleSheets() {
+  if (!transactions.length) { toast('⚠️ No transactions to sync.'); return; }
+  document.getElementById('gsModal').classList.add('open');
+}
+
+function closeGsModal() {
+  document.getElementById('gsModal').classList.remove('open');
+}
+
+function copyAndOpenSheets() {
+  // Build TSV (Sheets pastes TSV cleanly)
+  const header = ['Date','Type','Wallet','Activity','Purpose','Amount'];
+  const rows = [...transactions]
+    .sort((a,b) => a.date.localeCompare(b.date))
+    .map(t => [
+      t.date,
+      t.type,
+      t.wallet,
+      (t.activity || '').replace(/\t/g,' '),
+      (t.purpose  || '').replace(/\t/g,' '),
+      (t.type === 'expense' ? '-' : '') + t.amount.toFixed(2)
+    ].join('\t'));
+  const tsv = [header.join('\t'), ...rows].join('\n');
+
+  const finishOpen = () => {
+    closeGsModal();
+    // Opens a brand-new blank Google Sheet. The user signs in there if needed,
+    // then pastes (Ctrl/Cmd + V) into cell A1.
+    window.open('[sheets.new](https://sheets.new)', '_blank');
+    toast('📋 Copied! Paste into the new Sheet.');
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(tsv).then(finishOpen).catch(() => {
+      fallbackCopy(tsv);
+      finishOpen();
+    });
+  } else {
+    fallbackCopy(tsv);
+    finishOpen();
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity  = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+}
+
+// ═══════════════════════════════════════════
+//  RESET FLOW
+// ═══════════════════════════════════════════
+function confirmReset() {
+  document.getElementById('resetModal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('resetModal').classList.remove('open');
+}
+function doReset() {
+  transactions = [];
+  walletBases  = {};
+  localStorage.removeItem('pt_txns');
+  localStorage.removeItem('pt_bases');
+  // keep currency + theme preferences
+  closeModal();
+  renderDashboard();
+  renderWallets();
+  toast('🗑 All data reset');
+}
+
+// ═══════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════
+let toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+(function init() {
+  load();
+  // Default today's date in the form
+  document.getElementById('dateInput').value = todayStr();
+  renderDashboard();
+
+  // Close modals on background click
+  document.getElementById('resetModal').addEventListener('click', e => {
+    if (e.target.id === 'resetModal') closeModal();
+  });
+  document.getElementById('gsModal').addEventListener('click', e => {
+    if (e.target.id === 'gsModal') closeGsModal();
+  });
+})();
+</script>
+
+</body>
+</html>
